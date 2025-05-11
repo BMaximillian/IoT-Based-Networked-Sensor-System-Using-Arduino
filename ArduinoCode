@@ -1,0 +1,55 @@
+#include <ESP8266WiFi.h>
+#include <DHT.h>
+
+// Wi-Fi credentials
+const char* ssid = "YourWiFiSSID";
+const char* password = "YourWiFiPassword";
+
+// Server details
+const char* serverIP = "192.168.1.100"; // Replace with your server's IP
+const int serverPort = 12345;
+
+// DHT11 sensor setup
+#define DHTPIN 2
+#define DHTTYPE DHT11
+DHT dht(DHTPIN, DHTTYPE);
+
+// WiFi client
+WiFiClient client;
+
+void setup() {
+  Serial.begin(115200);
+  dht.begin();
+
+  // Connect to Wi-Fi
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi...");
+  }
+  Serial.println("Connected to WiFi");
+}
+
+void loop() {
+  // Read temperature
+  float temp = dht.readTemperature();
+  if (isnan(temp)) {
+    Serial.println("Failed to read from DHT sensor!");
+    delay(2000);
+    return;
+  }
+
+  // Connect to server
+  if (client.connect(serverIP, serverPort)) {
+    // Send temperature data
+    String data = String(temp);
+    client.print(data);
+    Serial.println("Sent temperature: " + data);
+    client.stop();
+  } else {
+    Serial.println("Connection to server failed");
+  }
+
+  // Wait before next reading
+  delay(5000); // Send data every 5 seconds
+}
